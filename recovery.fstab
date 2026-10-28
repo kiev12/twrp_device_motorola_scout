@@ -1,0 +1,14 @@
+# punto  tipo  dispositivo  dispositivo2  flags
+/system_root  erofs  system  flags=display="System";logical;slotselect
+/system_ext   erofs  system_ext  flags=display="System_ext";logical;slotselect
+/vendor       erofs  vendor  flags=display="Vendor";logical;slotselect
+/product      erofs  product  flags=display="Product";logical;slotselect
+/vendor_dlkm  erofs  vendor_dlkm  flags=display="Vendor_dlkm";logical;slotselect
+/system_dlkm  erofs  system_dlkm  flags=display="System_dlkm";logical;slotselect
+/metadata     f2fs   /dev/block/by-name/metadata  flags=display="Metadata"
+/data         f2fs   /dev/block/by-name/userdata  flags=display="Data";wipeingui;fileencryption=aes-256-xts:aes-256-cts:v2+inlinecrypt_optimized+wrappedkey_v0;keydirectory=/metadata/vold/metadata_encryption
+/boot         emmc   /dev/block/by-name/boot  flags=display="Boot";backup=1;flashimg=1;slotselect
+/init_boot    emmc   /dev/block/by-name/init_boot  flags=display="Init_boot";backup=1;flashimg=1;slotselect
+/vendor_boot  emmc   /dev/block/by-name/vendor_boot  flags=display="Vendor_boot";backup=1;flashimg=1;slotselect
+/dtbo         emmc   /dev/block/by-name/dtbo  flags=display="Dtbo";backup=1;flashimg=1;slotselect
+/misc         emmc   /dev/block/by-name/misc

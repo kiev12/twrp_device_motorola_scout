@@ -1,0 +1,81 @@
+DEVICE_PATH := device/motorola/scout
+
+# Arquitectura (solo 64 bits)
+TARGET_ARCH := arm64
+TARGET_ARCH_VARIANT := armv8-a
+TARGET_CPU_ABI := arm64-v8a
+TARGET_CPU_VARIANT := generic
+TARGET_IS_64_BIT := true
+TARGET_SUPPORTS_64_BIT_APPS := true
+
+# Plataforma
+TARGET_BOARD_PLATFORM := mt6878
+TARGET_BOOTLOADER_BOARD_NAME := scout
+TARGET_NO_BOOTLOADER := true
+TARGET_NO_RADIOIMAGE := true
+
+# A/B y particiones dinamicas
+AB_OTA_UPDATER := true
+AB_OTA_PARTITIONS += boot init_boot vendor_boot dtbo vbmeta vbmeta_system system system_ext product vendor vendor_dlkm system_dlkm
+BOARD_SUPER_PARTITION_SIZE := 14495514624
+
+# Kernel prebuilt (solo para que el build tenga todo; el kernel real queda en boot)
+TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/kernel
+BOARD_KERNEL_IMAGE_NAME := Image.gz
+BOARD_RAMDISK_USE_LZ4 := true
+
+# Boot header v4 (valores MediaTek tomados del vendor_boot del stock)
+BOARD_BOOT_HEADER_VERSION := 4
+BOARD_KERNEL_BASE := 0x3fff8000
+BOARD_KERNEL_PAGESIZE := 4096
+BOARD_KERNEL_OFFSET := 0x00008000
+BOARD_RAMDISK_OFFSET := 0x26f08000
+BOARD_KERNEL_TAGS_OFFSET := 0x07c88000
+BOARD_DTB_OFFSET := 0x07c88000
+BOARD_KERNEL_CMDLINE := bootopt=64S3,32N2,64N2
+BOARD_MKBOOTIMG_ARGS += --header_version $(BOARD_BOOT_HEADER_VERSION)
+BOARD_MKBOOTIMG_ARGS += --pagesize $(BOARD_KERNEL_PAGESIZE)
+BOARD_MKBOOTIMG_ARGS += --base $(BOARD_KERNEL_BASE)
+BOARD_MKBOOTIMG_ARGS += --kernel_offset $(BOARD_KERNEL_OFFSET)
+BOARD_MKBOOTIMG_ARGS += --ramdisk_offset $(BOARD_RAMDISK_OFFSET)
+BOARD_MKBOOTIMG_ARGS += --tags_offset $(BOARD_KERNEL_TAGS_OFFSET)
+BOARD_MKBOOTIMG_ARGS += --dtb_offset $(BOARD_DTB_OFFSET)
+BOARD_INCLUDE_DTB_IN_BOOTIMG := true
+BOARD_PREBUILT_DTBIMAGE_DIR := $(DEVICE_PATH)/prebuilt/dtb
+
+# Tamanos de particion (de la tabla GPT del firmware)
+BOARD_BOOTIMAGE_PARTITION_SIZE := 67108864
+BOARD_VENDOR_BOOTIMAGE_PARTITION_SIZE := 67108864
+BOARD_INIT_BOOT_IMAGE_PARTITION_SIZE := 8388608
+
+# Recovery dentro de vendor_boot
+BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := true
+BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT := true
+
+# Sistemas de archivos
+TARGET_USERIMAGES_USE_EXT4 := true
+TARGET_USERIMAGES_USE_F2FS := true
+BOARD_USES_METADATA_PARTITION := true
+
+# TWRP
+TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/recovery.fstab
+TARGET_RECOVERY_PIXEL_FORMAT := RGBX_8888
+RECOVERY_SDCARD_ON_DATA := true
+BOARD_HAS_NO_SELECT_BUTTON := true
+TW_THEME := portrait_hdpi
+TW_EXTRA_LANGUAGES := true
+TW_INCLUDE_FASTBOOTD := true
+TW_INCLUDE_RESETPROP := true
+TW_INCLUDE_REPACKTOOLS := true
+TW_USE_TOOLBOX := true
+TW_EXCLUDE_DEFAULT_USB_INIT := true
+TW_NO_LEGACY_PROPS := true
+
+# Modulos de touch (estan en /vendor_dlkm del telefono)
+TW_LOAD_VENDOR_BOOT_MODULES := true
+TW_LOAD_VENDOR_MODULES := "sensors_class.ko mmi_info.ko mmi_relay.ko touchscreen_u_mmi.ko focaltech_touch_v3_u_mmi.ko goodix_brl_u_mmi.ko eswin_riv_u_mmi.ko"
+
+# Cifrado de /data: se deja para una segunda etapa
+# TW_INCLUDE_CRYPTO := true
+# TW_INCLUDE_CRYPTO_FBE := true
+# TW_INCLUDE_FBE_METADATA_DECRYPT := true
