@@ -19,9 +19,8 @@ AB_OTA_UPDATER := true
 AB_OTA_PARTITIONS += boot init_boot vendor_boot dtbo vbmeta vbmeta_system system system_ext product vendor vendor_dlkm system_dlkm
 BOARD_SUPER_PARTITION_SIZE := 14495514624
 
-# Kernel prebuilt (solo para que el build tenga todo; el kernel real queda en boot)
-TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/kernel
-BOARD_KERNEL_IMAGE_NAME := Image.gz
+# Sin kernel: el kernel real queda en la particion boot del telefono
+TARGET_NO_KERNEL := true
 BOARD_RAMDISK_USE_LZ4 := true
 
 # Boot header v4 (valores MediaTek tomados del vendor_boot del stock)
