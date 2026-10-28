@@ -6,9 +6,6 @@ on:
       MANIFEST_BRANCH:
         description: "Rama del minimal manifest de TWRP"
         default: "twrp-14.1"
-      LUNCH:
-        description: "Objetivo de lunch"
-        default: "twrp_scout-eng"
       BUILD_TARGET:
         description: "Objetivo de compilacion"
         default: "vendorbootimage"
@@ -61,7 +58,13 @@ jobs:
           cd "$HOME/twrp"
           export ALLOW_MISSING_DEPENDENCIES=true
           source build/envsetup.sh
-          lunch "${{ inputs.LUNCH }}"
+          ls build/release || true
+          ok=0
+          for rel in ap1a ap2a ap3a up1a trunk_staging; do
+            echo "Probando lunch twrp_scout-$rel-eng"
+            if lunch "twrp_scout-$rel-eng"; then ok=1; break; fi
+          done
+          if [ "$ok" != "1" ]; then echo "Ningun lunch funciono"; exit 1; fi
           mka "${{ inputs.BUILD_TARGET }}" -j"$(nproc --all)"
 
       - name: Subir imagenes
