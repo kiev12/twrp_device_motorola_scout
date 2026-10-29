@@ -1,76 +1,81 @@
-name: Build TWRP scout
+DEVICE_PATH := device/motorola/scout
 
-on:
-  workflow_dispatch:
-    inputs:
-      MANIFEST_BRANCH:
-        description: "Rama del minimal manifest de TWRP"
-        default: "twrp-14.1"
-      BUILD_TARGET:
-        description: "Objetivo de compilacion"
-        default: "vendorbootimage"
+# Arquitectura (solo 64 bits)
+TARGET_ARCH := arm64
+TARGET_ARCH_VARIANT := armv8-a
+TARGET_CPU_ABI := arm64-v8a
+TARGET_CPU_VARIANT := generic
+TARGET_IS_64_BIT := true
+TARGET_SUPPORTS_64_BIT_APPS := true
 
-jobs:
-  build:
-    runs-on: ubuntu-22.04
-    timeout-minutes: 360
-    steps:
-      - name: Liberar espacio en disco
-        uses: jlumbroso/free-disk-space@main
-        with:
-          tool-cache: true
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          docker-images: true
-          swap-storage: false
+# Plataforma
+TARGET_BOARD_PLATFORM := mt6878
+TARGET_BOOTLOADER_BOARD_NAME := scout
+TARGET_NO_BOOTLOADER := true
+TARGET_NO_RADIOIMAGE := true
 
-      - name: Instalar dependencias
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git-core gnupg flex bison build-essential zip curl \
-            zlib1g-dev libc6-dev-i386 x11proto-core-dev libx11-dev lib32z1-dev \
-            libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig python3 \
-            python-is-python3 ccache bc libncurses5 rsync lz4
-          mkdir -p "$HOME/bin"
-          curl -s https://storage.googleapis.com/git-repo-downloads/repo -o "$HOME/bin/repo"
-          chmod a+x "$HOME/bin/repo"
-          echo "$HOME/bin" >> "$GITHUB_PATH"
-          git config --global user.name "twrp-builder"
-          git config --global user.email "twrp-builder@users.noreply.github.com"
+# A/B y particiones dinamicas
+AB_OTA_UPDATER := true
+AB_OTA_PARTITIONS += boot init_boot vendor_boot dtbo vbmeta vbmeta_system system system_ext product vendor vendor_dlkm system_dlkm
+BOARD_SUPER_PARTITION_SIZE := 14495514624
+TARGET_COPY_OUT_VENDOR := vendor
 
-      - name: Sincronizar el minimal manifest de TWRP
-        run: |
-          mkdir -p "$HOME/twrp"
-          cd "$HOME/twrp"
-          repo init --depth=1 -u https://github.com/minimal-manifest-twrp/platform_manifest_twrp_aosp.git -b "${{ inputs.MANIFEST_BRANCH }}"
-          repo sync -c -j"$(nproc --all)" --force-sync --no-clone-bundle --no-tags
+# Sin kernel: el kernel real queda en la particion boot del telefono
+TARGET_NO_KERNEL := true
+BOARD_RAMDISK_USE_LZ4 := true
 
-      - name: Traer el device tree de este repositorio
-        run: |
-          cd "$HOME/twrp"
-          git clone "https://github.com/${{ github.repository }}" -b "${{ github.ref_name }}" device/motorola/scout
+# Boot header v4 (valores MediaTek tomados del vendor_boot del stock)
+BOARD_BOOT_HEADER_VERSION := 4
+BOARD_KERNEL_BASE := 0x3fff8000
+BOARD_KERNEL_PAGESIZE := 4096
+BOARD_KERNEL_OFFSET := 0x00008000
+BOARD_RAMDISK_OFFSET := 0x26f08000
+BOARD_KERNEL_TAGS_OFFSET := 0x07c88000
+BOARD_DTB_OFFSET := 0x07c88000
+BOARD_KERNEL_CMDLINE := bootopt=64S3,32N2,64N2
+BOARD_MKBOOTIMG_ARGS += --header_version $(BOARD_BOOT_HEADER_VERSION)
+BOARD_MKBOOTIMG_ARGS += --pagesize $(BOARD_KERNEL_PAGESIZE)
+BOARD_MKBOOTIMG_ARGS += --base $(BOARD_KERNEL_BASE)
+BOARD_MKBOOTIMG_ARGS += --kernel_offset $(BOARD_KERNEL_OFFSET)
+BOARD_MKBOOTIMG_ARGS += --ramdisk_offset $(BOARD_RAMDISK_OFFSET)
+BOARD_MKBOOTIMG_ARGS += --tags_offset $(BOARD_KERNEL_TAGS_OFFSET)
+BOARD_MKBOOTIMG_ARGS += --dtb_offset $(BOARD_DTB_OFFSET)
+BOARD_INCLUDE_DTB_IN_BOOTIMG := true
+BOARD_PREBUILT_DTBIMAGE_DIR := $(DEVICE_PATH)/prebuilt/dtb
 
-      - name: Parche task_profiles (TWRP sin cifrado)
-        run: |
-          cd "$HOME/twrp"
-          sed -i 's/^LOCAL_REQUIRED_MODULES += init_second_stage.recovery \\$/LOCAL_REQUIRED_MODULES += task_profiles.json init_second_stage.recovery \\/' bootable/recovery/prebuilt/Android.mk
-          grep -n "task_profiles.json" bootable/recovery/prebuilt/Android.mk
+# Tamanos de particion (de la tabla GPT del firmware)
+BOARD_BOOTIMAGE_PARTITION_SIZE := 67108864
+BOARD_VENDOR_BOOTIMAGE_PARTITION_SIZE := 67108864
+BOARD_INIT_BOOT_IMAGE_PARTITION_SIZE := 8388608
 
-      - name: Compilar
-        shell: bash
-        run: |
-          cd "$HOME/twrp"
-          export ALLOW_MISSING_DEPENDENCIES=true
-          source build/envsetup.sh
-          lunch twrp_scout-ap2a-eng
-          mka "${{ inputs.BUILD_TARGET }}" -j"$(nproc --all)"
+# Recovery dentro de vendor_boot
+BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := true
+BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT := true
 
-      - name: Subir imagenes
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: twrp-scout
-          path: /home/runner/twrp/out/target/product/*/*.img
-          if-no-files-found: warn
+# Sistemas de archivos
+TARGET_USERIMAGES_USE_EXT4 := true
+TARGET_USERIMAGES_USE_F2FS := true
+BOARD_USES_METADATA_PARTITION := true
+
+# TWRP
+TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/recovery.fstab
+TARGET_RECOVERY_PIXEL_FORMAT := RGBX_8888
+RECOVERY_SDCARD_ON_DATA := true
+BOARD_HAS_NO_SELECT_BUTTON := true
+TW_THEME := portrait_hdpi
+TW_EXTRA_LANGUAGES := true
+TW_INCLUDE_FASTBOOTD := true
+TW_INCLUDE_RESETPROP := true
+TW_INCLUDE_REPACKTOOLS := true
+TW_USE_TOOLBOX := true
+TW_EXCLUDE_DEFAULT_USB_INIT := true
+TW_NO_LEGACY_PROPS := true
+
+# Modulos de touch (estan en /vendor_dlkm del telefono)
+TW_LOAD_VENDOR_BOOT_MODULES := true
+TW_LOAD_VENDOR_MODULES := "sensors_class.ko mmi_info.ko mmi_relay.ko touchscreen_u_mmi.ko focaltech_touch_v3_u_mmi.ko goodix_brl_u_mmi.ko eswin_riv_u_mmi.ko"
+
+# Cifrado de /data: se deja para una segunda etapa
+# TW_INCLUDE_CRYPTO := true
+# TW_INCLUDE_CRYPTO_FBE := true
+# TW_INCLUDE_FBE_METADATA_DECRYPT := true
