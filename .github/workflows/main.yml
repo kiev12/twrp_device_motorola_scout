@@ -52,19 +52,19 @@ jobs:
           cd "$HOME/twrp"
           git clone "https://github.com/${{ github.repository }}" -b "${{ github.ref_name }}" device/motorola/scout
 
+      - name: Parche task_profiles (TWRP sin cifrado)
+        run: |
+          cd "$HOME/twrp"
+          sed -i 's/^LOCAL_REQUIRED_MODULES += init_second_stage.recovery \\$/LOCAL_REQUIRED_MODULES += task_profiles.json init_second_stage.recovery \\/' bootable/recovery/prebuilt/Android.mk
+          grep -n "task_profiles.json" bootable/recovery/prebuilt/Android.mk
+
       - name: Compilar
         shell: bash
         run: |
           cd "$HOME/twrp"
           export ALLOW_MISSING_DEPENDENCIES=true
           source build/envsetup.sh
-          ls build/release || true
-          ok=0
-          for rel in ap1a ap2a ap3a up1a trunk_staging; do
-            echo "Probando lunch twrp_scout-$rel-eng"
-            if lunch "twrp_scout-$rel-eng"; then ok=1; break; fi
-          done
-          if [ "$ok" != "1" ]; then echo "Ningun lunch funciono"; exit 1; fi
+          lunch twrp_scout-ap2a-eng
           mka "${{ inputs.BUILD_TARGET }}" -j"$(nproc --all)"
 
       - name: Subir imagenes
